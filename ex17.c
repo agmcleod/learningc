@@ -61,10 +61,10 @@ struct Connection *Database_open(const char *filename, char mode, const int max_
   conn->db->max_rows = max_rows;
   conn->db->max_data = max_data;
 
-  conn->db->rows = malloc(max_rows * sizeof(struct Address));
-
   if(mode == 'c') {
     conn->file = fopen(filename, "w");
+    int rc = fwrite(&conn->db->max_data, sizeof(int), 1, conn->file);
+    rc = fwrite(&conn->db->max_rows, sizeof(int), 1, conn->file);
   }
   else {
     conn->file = fopen(filename, "r+");
@@ -81,6 +81,7 @@ struct Connection *Database_open(const char *filename, char mode, const int max_
 void Database_close(struct Connection *conn) {
   if(conn) {
     if(conn->file) fclose(conn->file);
+    if(conn->db && conn->db->rows) free(conn->db->rows);
     if(conn->db) free(conn->db);
     free(conn);
   }
@@ -96,10 +97,12 @@ void Database_write(struct Connection *conn) {
 }
 
 void Database_create(struct Connection *conn) {
+  conn->db->rows = malloc(conn->db->max_rows * sizeof(struct Address));
   for(int i = 0; i < conn->db->max_rows; i++) {
-    struct Address addr = { .id = i, .set = 0 };
-    conn->db->rows[i] = addr;
+    struct Address addr = { .id = i, .set = 0, .name = malloc(sizeof(char) * conn->db->max_data), .email = malloc(sizeof(char) * conn->db->max_data) };
+    memcpy(conn->db->rows + i, &addr, sizeof(addr));
   }
+  printf("Db created for %i\n", conn->db->max_rows);
 }
 
 void Database_set(struct Connection *conn, int id, const char *name, const char *email) {
