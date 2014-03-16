@@ -51,6 +51,7 @@ void Database_load(struct Connection *conn) {
   struct Address *addr;
 
   db->rows = malloc(db->max_rows * sizeof(struct Address));
+  if (!db->rows) die("Memory error.");
 
   if (fread(&db->max_data, sizeof(db->max_data), 1, conn->file) != 1) {
     die("Failed to read max data.");
@@ -59,9 +60,6 @@ void Database_load(struct Connection *conn) {
   if (fread(&db->max_rows, sizeof(db->max_rows), 1, conn->file) != 1) {
     die("Failed to read max rows.");
   }
-
-  db->rows = malloc(db->max_rows * sizeof(struct Address));
-  if (!db->rows) die("Memory error.");
 
   int field_size = db->max_data * sizeof(char);
 
@@ -139,10 +137,12 @@ void Database_write(struct Connection *conn) {
   int rc = fwrite(&conn->db->max_data, sizeof(int), 1, conn->file);
   if(rc != 1) die_and_close("Failed to write database.", conn);
 
-  if(fwrite(&conn->db->max_data, sizeof(conn->db->max_data), 1, conn->file) != 1) {
+  int field_size = sizeof(char) * conn->db->max_data;
+
+  if(fwrite(&conn->db->max_data, field_size, 1, conn->file) != 1) {
     die("Failed to write database.");
   }
-  if(fwrite(&conn->db->max_rows, sizeof(conn->db->max_rows), 1, conn->file) != 1) {
+  if(fwrite(&conn->db->max_rows, field_size, 1, conn->file) != 1) {
     die("Failed to write database.");
   }
 
@@ -152,8 +152,8 @@ void Database_write(struct Connection *conn) {
   for (addr = db->rows; addr < db->rows + db->max_rows; ++addr) {
     if (fwrite(&addr->id, sizeof(addr->id), 1, conn->file) != 1 ||
       fwrite(&addr->set, sizeof(addr->set), 1, conn->file) != 1 ||
-      fwrite(addr->name, db->max_data, 1, conn->file) != 1 ||
-      fwrite(addr->email, db->max_data, 1, conn->file) != 1) {
+      fwrite(addr->name, field_size, 1, conn->file) != 1 ||
+      fwrite(addr->email, field_size, 1, conn->file) != 1) {
         die("Failed to write database.");
     }
   }
@@ -179,7 +179,7 @@ void Database_create(struct Connection *conn) {
     addr->name[0] = '\0';
 
     addr->email = malloc(field_size);
-    if (!addr->name) die("Memory error: new address malloc email.");
+    if (!addr->email) die("Memory error: new address malloc email.");
     addr->email[0] = '\0';
   }
 }
