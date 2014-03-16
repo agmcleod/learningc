@@ -116,18 +116,7 @@ void Database_create(struct Connection *conn) {
     struct Address addr;
     addr.id = i;
     addr.set = 0;
-
-    addr.name = malloc(field_size);
-    if (!addr.name) die("Memory error: new address malloc name.");
-    addr.name[0] = '\0';
-
-    addr.email = malloc(field_size);
-    if (!addr.email) die("Memory error: new address malloc email.");
-    addr.email[0] = '\0';
     memcpy(conn->db->rows +i, &addr, sizeof(addr) );
-
-    free(addr.name);
-    free(addr.email);
   }
 }
 
