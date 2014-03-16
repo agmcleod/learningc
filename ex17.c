@@ -47,42 +47,8 @@ void Address_print(struct Address *addr) {
 }
 
 void Database_load(struct Connection *conn) {
-  struct Database *db = conn->db;
-  struct Address *addr;
-
-  db->rows = malloc(db->max_rows * sizeof(struct Address));
-  if (!db->rows) die("Memory error.");
-
-  if (fread(&db->max_data, sizeof(db->max_data), 1, conn->file) != 1) {
-    die("Failed to read max data.");
-  }
-        
-  if (fread(&db->max_rows, sizeof(db->max_rows), 1, conn->file) != 1) {
-    die("Failed to read max rows.");
-  }
-
-  int field_size = db->max_data * sizeof(char);
-
-  for (addr = db->rows; addr < db->rows + db->max_rows; ++addr) {
-    if (fread(&addr->id, sizeof(addr->id), 1, conn->file) != 1) {
-      die("Failed to read id.");
-    }
-    
-    addr->name = malloc(field_size);
-    if (!addr->name) die("Memory error.");
-    if (fread(addr->name, field_size, 1, conn->file) != 1) {
-      die("Failed to read name.");
-    }
-
-    addr->email = malloc(field_size);
-    if (!addr->email) die("Memory error.");
-    if (fread(addr->email, field_size, 1, conn->file) != 1) {
-      die("Failed to read email.");
-    }
-
-    if (fread(&addr->set, sizeof(int), 1, conn->file) != 1) {
-      die("Failed to read set.");
-    }
+  if(fread(conn->db, sizeof(struct Database), 1, conn->file) != 1) {
+    die("Failed to load database.");
   }
 }
 
@@ -114,20 +80,10 @@ struct Connection *Database_open(const char *filename, char mode, const int max_
 void Database_close(struct Connection *conn) {
   if(conn) {
     if(conn->file) fclose(conn->file);
-    if(conn->db && conn->db->rows) {
-      struct Address *addr;
-      for(addr = conn->db->rows; addr < conn->db->rows + conn->db->max_rows; ++addr) {
-        if(addr->name) {
-          free(addr->name);
-        }
-        if(addr->email) {
-          free(addr->email);
-        }
-      }
-
+    if(conn->db) {
       free(conn->db->rows);
+      free(conn->db);
     }
-    if(conn->db) free(conn->db);
     free(conn);
   }
 }
@@ -137,26 +93,15 @@ void Database_write(struct Connection *conn) {
   int rc = fwrite(&conn->db->max_data, sizeof(int), 1, conn->file);
   if(rc != 1) die_and_close("Failed to write database.", conn);
 
-  int field_size = sizeof(char) * conn->db->max_data;
-
-  if(fwrite(&conn->db->max_data, field_size, 1, conn->file) != 1) {
+  /* if(fwrite(&conn->db->max_data, sizeof(char) * conn->db->max_data, 1, conn->file) != 1) {
     die("Failed to write database.");
   }
-  if(fwrite(&conn->db->max_rows, field_size, 1, conn->file) != 1) {
+  if(fwrite(&conn->db->max_rows, sizeof(int) * conn->db->max_rows, 1, conn->file) != 1) {
     die("Failed to write database.");
-  }
+  } */
 
-  struct Address *addr;
-  struct Database *db = conn->db;
-
-  for (addr = db->rows; addr < db->rows + db->max_rows; ++addr) {
-    if (fwrite(&addr->id, sizeof(addr->id), 1, conn->file) != 1 ||
-      fwrite(&addr->set, sizeof(addr->set), 1, conn->file) != 1 ||
-      fwrite(addr->name, field_size, 1, conn->file) != 1 ||
-      fwrite(addr->email, field_size, 1, conn->file) != 1) {
-        die("Failed to write database.");
-    }
-  }
+  rc = fwrite(conn->db, sizeof(conn->db), 1, conn->file);
+  if(rc != 1) die("Failed to write database.");
 
   rc = fflush(conn->file);
   if(rc == -1) die_and_close("Cannot flush database", conn);
@@ -165,22 +110,24 @@ void Database_write(struct Connection *conn) {
 void Database_create(struct Connection *conn) {
   conn->db->rows = malloc(conn->db->max_rows * sizeof(struct Address));
 
-  if(!conn->db->rows) die_and_close("Memory Error with rows", conn);
-
   int field_size = conn->db->max_data * sizeof(char);
 
   for(int i = 0; i < conn->db->max_rows; i++) {
-    struct Address *addr = &conn->db->rows[i];
-    addr->id = i;
-    addr->set = 0;
+    struct Address addr;
+    addr.id = i;
+    addr.set = 0;
 
-    addr->name = malloc(field_size);
-    if (!addr->name) die("Memory error: new address malloc name.");
-    addr->name[0] = '\0';
+    addr.name = malloc(field_size);
+    if (!addr.name) die("Memory error: new address malloc name.");
+    addr.name[0] = '\0';
 
-    addr->email = malloc(field_size);
-    if (!addr->email) die("Memory error: new address malloc email.");
-    addr->email[0] = '\0';
+    addr.email = malloc(field_size);
+    if (!addr.email) die("Memory error: new address malloc email.");
+    addr.email[0] = '\0';
+    memcpy(conn->db->rows +i, &addr, sizeof(addr) );
+
+    free(addr.name);
+    free(addr.email);
   }
 }
 
@@ -190,14 +137,13 @@ void Database_set(struct Connection *conn, int id, const char *name, const char 
     printf("ID: %d", id);
     die_and_close("Already set, delete it first.", conn);
   }
-
   addr->set = 1;
   char *res = strncpy(addr->name, name, conn->db->max_data);
 
+  if(!res) die_and_close("Name copy failed", conn);
+
   int l = strlen(addr->name);
   addr->name[l] = '\0';
-
-  if(!res) die_and_close("Name copy failed", conn);
 
   res = strncpy(addr->email, email, conn->db->max_data);
   if(!res) die_and_close("Email copy failed", conn);
