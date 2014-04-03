@@ -1,5 +1,5 @@
-#ifndef _ex18_h
-#define _ex18_h
+#ifndef _ex19_h
+#define _ex19_h
 
 #include "object.h"
 
@@ -21,7 +21,7 @@ struct Room {
   struct Room *south;
   struct Room *east;
   struct Room *west;
-}
+};
 
 typedef struct Room Room;
 
@@ -33,7 +33,7 @@ struct Map {
   Object proto;
   Room *start;
   Room *location;
-}
+};
 
 typedef struct Map Map;
 
