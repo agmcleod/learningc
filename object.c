@@ -2,19 +2,21 @@
 #include <string.h>
 #include <stdlib.h>
 #include "object.h"
-#include <assert.h>
 
 int Object_attack(void *self, int damage) {
+  assert(self != NULL);
   printf("You can't attack that.\n");
   return 0;
 }
 
 void Object_describe(void *self) {
+  assert(self != NULL);
   Object *obj = self;
   printf("%s.\n", obj->description);
 }
 
 void Object_destroy(void *self) {
+  assert(self != NULL);
   Object *obj = self;
   if(obj) {
     if(obj->description) free(obj->description);
@@ -23,11 +25,13 @@ void Object_destroy(void *self) {
 }
 
 int Object_init(void *self) {
+  assert(self != NULL);
   // do nothing
   return 1;
 }
 
 void *Object_move(void *self, Direction direction) {
+  assert(self != NULL);
   printf("You can't go that direction.\n");
   return NULL;
 }
@@ -57,6 +61,7 @@ void *Object_new(size_t size, Object proto, char *description) {
   }
   else {
     // all done, return the object
+    assert(el != NULL);
     return el;
   }
 }
