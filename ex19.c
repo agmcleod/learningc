@@ -62,9 +62,11 @@ void *Room_move(void *self, Direction direction) {
 
   if(next) {
     next->_(describe)(next);
+    return next;
   }
-
-  return next;
+  else {
+    return NULL;
+  }
 }
 
 int Room_attack(void *self, int damage) {
@@ -95,6 +97,7 @@ void *Map_move(void *self, Direction direction) {
 
   next = location->_(move)(location, direction);
 
+  assert(next != NULL);
   if(next) {
     map->location = next;
   }
