@@ -1,5 +1,5 @@
 CFLAGS=-Wall -g -DNDEBUG -std=c99
-SRCS=ex1.c ex10.c ex11.c ex12.c ex13.c ex14.c ex15.c ex16-2.c ex16.c ex17.c ex18.c ex3.c ex5.c ex6.c ex7.c ex8.c ex9.c ex23.
+SRCS=ex1.c ex10.c ex11.c ex12.c ex13.c ex14.c ex15.c ex16-2.c ex16.c ex17.c ex18.c ex3.c ex5.c ex6.c ex7.c ex8.c ex9.c ex23.c ex24.c
 PROGS=$(patsubst %.c,%,$(SRCS))
 
 all: dir object.o $(PROGS) ex19 ex22
