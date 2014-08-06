@@ -9,7 +9,7 @@ void out_string(const char *str, ...) {
   va_list argp;
   va_start(argp, str);
 
-  printf(str, argp);
+  vprintf(str, argp);
   va_end(argp);
 }
 
